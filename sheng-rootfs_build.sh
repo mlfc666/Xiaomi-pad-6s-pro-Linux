@@ -24,8 +24,8 @@ TARGET_FLAVOUR=${4:-all}
 # 🔐 账户与密码配置 (可由环境变量覆盖)
 # ==========================================
 DEFAULT_USER=${DEFAULT_USER:-user}
-DEFAULT_USER_PASSWORD=${DEFAULT_USER_PASSWORD:-}
-ROOT_PASSWORD=${ROOT_PASSWORD:-}
+DEFAULT_USER_PASSWORD=${DEFAULT_USER_PASSWORD:-123456}
+ROOT_PASSWORD=${ROOT_PASSWORD:-123456}
 
 distro_type=$(echo "$DISTRO" | cut -d'-' -f1)
 distro_variant=$(echo "$DISTRO" | cut -d'-' -f2)

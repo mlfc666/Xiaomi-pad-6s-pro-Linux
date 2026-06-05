@@ -38,12 +38,12 @@ on:
         description: '账户密码'
         required: false
         type: string
-        default: ''
+        default: '123456'
       root_password:
         description: 'root 密码'
         required: false
         type: string
-        default: ''
+        default: '123456'
   push:
     branches:
       - main
