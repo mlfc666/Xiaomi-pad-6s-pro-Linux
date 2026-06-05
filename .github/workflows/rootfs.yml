@@ -160,7 +160,8 @@ jobs:
         run: |
           chmod +x sheng-rootfs_build.sh
           # 把矩阵分配到的专属任务传给构建脚本
-          sudo bash sheng-rootfs_build.sh debian-desktop "${{ github.event.inputs.kernel_version || '7.1' }}" "${{ matrix.boot }}" "${{ matrix.desktop }}"
+          # -E 保留环境变量，否则 sudo 会清空 env: 块里的 DEFAULT_USER/密码
+          sudo -E bash sheng-rootfs_build.sh debian-desktop "${{ github.event.inputs.kernel_version || '7.1' }}" "${{ matrix.boot }}" "${{ matrix.desktop }}"
 
           PKG_COUNT=$(ls -1 *.7z 2>/dev/null | wc -l)
           echo "pkg_count=$PKG_COUNT" >> $GITHUB_OUTPUT
