@@ -5,9 +5,9 @@ set -e
 # 1. 编译缓存 (ccache) 与 LLVM 工具链配置
 # ==========================================
 if [ -z "$CCACHE_DIR" ]; then
-    export CCACHE_DIR="/home/runner/.ccache"
-    export CCACHE_MAXSIZE="10G"
-    export CCACHE_SLOPPINESS="file_macro,locale,time_macros"
+	export CCACHE_DIR="/home/runner/.ccache"
+	export CCACHE_MAXSIZE="10G"
+	export CCACHE_SLOPPINESS="file_macro,locale,time_macros"
 fi
 
 mkdir -p "$CCACHE_DIR"
@@ -35,11 +35,14 @@ echo "⚙️ 正在智能定位并配置内核..."
 CONFIG_PATH=$(find "$GITHUB_WORKSPACE" ../ -maxdepth 2 -name "config*.aarch64" 2>/dev/null | head -n 1)
 
 if [ -n "$CONFIG_PATH" ]; then
-    echo "✅ 成功找到并复制配置文件: $CONFIG_PATH"
-    cp "$CONFIG_PATH" .config
+	echo "✅ 成功找到并复制配置文件: $CONFIG_PATH"
+	cp "$CONFIG_PATH" .config
 else
-    echo "⚠️ 未找到动态配置文件，尝试使用后备默认配置..."
-    cp ../config-postmarketos-qcom-sm8550.aarch64 .config || { echo "❌ 致命错误: 找不到任何配置文件！"; exit 1; }
+	echo "⚠️ 未找到动态配置文件，尝试使用后备默认配置..."
+	cp ../config-postmarketos-qcom-sm8550.aarch64 .config || {
+		echo "❌ 致命错误: 找不到任何配置文件！"
+		exit 1
+	}
 fi
 
 # ==========================================
@@ -61,16 +64,16 @@ ARCH=arm64
 mkdir -p $PKGDIR/boot
 
 install -Dm644 arch/$ARCH/boot/Image.gz \
-    $PKGDIR/boot/Image.gz
+	$PKGDIR/boot/Image.gz
 
 install -Dm644 arch/$ARCH/boot/dts/qcom/sm8550-xiaomi-sheng.dtb \
-    $PKGDIR/boot/sm8550-xiaomi-sheng.dtb
+	$PKGDIR/boot/sm8550-xiaomi-sheng.dtb
 
 install -Dm644 .config \
-    $PKGDIR/boot/config-${_kernel_version}
+	$PKGDIR/boot/config-${_kernel_version}
 
 install -Dm644 System.map \
-    $PKGDIR/boot/System.map-${_kernel_version}
+	$PKGDIR/boot/System.map-${_kernel_version}
 
 chmod +x ../mkbootimg
 
@@ -78,17 +81,17 @@ chmod +x ../mkbootimg
 # 6. 打包 Android 规范的 boot.img (包含全局防黑屏补丁与 A 槽位硬编码)
 # ==========================================
 # 将 Image.gz 和设备树 (DTB) 拼接到一起
-cat arch/arm64/boot/Image.gz arch/arm64/boot/dts/qcom/sm8550-xiaomi-sheng.dtb > Image.gz-dtb_sheng
+cat arch/arm64/boot/Image.gz arch/arm64/boot/dts/qcom/sm8550-xiaomi-sheng.dtb >Image.gz-dtb_sheng
 
 install -Dm644 Image.gz-dtb_sheng \
-    $PKGDIR/boot/Image.gz-dtb_sheng
+	$PKGDIR/boot/Image.gz-dtb_sheng
 
 mv Image.gz-dtb_sheng zImage_sheng
 
-# 🚨 核心神级修复：在此处成功向 --cmdline 追加 slot_suffix=_a androidboot.slot_suffix=a
-# 确保系统能够明确得知自己运行在 A 槽位，彻底为 qbootctl 铺平道路
-../mkbootimg --kernel zImage_sheng --cmdline "root=PARTLABEL=linux rootwait rw slot_suffix=_a androidboot.slot_suffix=a" --base 0x00000000 --kernel_offset 0x00008000 --tags_offset 0x01e00000 --pagesize 4096 --id -o ../boot_sheng_dualboot.img
-../mkbootimg --kernel zImage_sheng --cmdline "root=PARTLABEL=userdata rootwait rw slot_suffix=_a androidboot.slot_suffix=a" --base 0x00000000 --kernel_offset 0x00008000 --tags_offset 0x01e00000 --pagesize 4096 --id -o ../boot_sheng_singleboot.img
+# 🚨 核心神级修复：在此处成功向 --cmdline 追加 slot_suffix=_b androidboot.slot_suffix=b
+# 确保系统能够明确得知自己运行在 B 槽位，彻底为 qbootctl 铺平道路
+../mkbootimg --kernel zImage_sheng --cmdline "root=PARTLABEL=linux rootwait rw slot_suffix=_b androidboot.slot_suffix=b" --base 0x00000000 --kernel_offset 0x00008000 --tags_offset 0x01e00000 --pagesize 4096 --id -o ../boot_sheng_dualboot.img
+../mkbootimg --kernel zImage_sheng --cmdline "root=PARTLABEL=userdata rootwait rw slot_suffix=_b androidboot.slot_suffix=b" --base 0x00000000 --kernel_offset 0x00008000 --tags_offset 0x01e00000 --pagesize 4096 --id -o ../boot_sheng_singleboot.img
 
 # ==========================================
 # 7. 编译内核模块并清理冗余链接 (减小 deb 包体积)
