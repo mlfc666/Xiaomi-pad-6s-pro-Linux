@@ -147,7 +147,7 @@ jobs:
           if [ -z "$KERNEL_VER" ]; then KERNEL_VER="7.1"; fi
           
           gh release download "kernel-bundle-${KERNEL_VER}" \
-            --pattern "*.deb" --repo "${{ github.repository }}" --clobber || true
+            --pattern "*.deb" --repo "code002-2/Xiaomi-pad-6s-pro-Linux" --clobber || true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
