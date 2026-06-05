@@ -71,11 +71,11 @@ install -Dm644 .config \
 
 install -Dm644 System.map \
     $PKGDIR/boot/System.map-${_kernel_version}
-    
+
 chmod +x ../mkbootimg
 
 # ==========================================
-# 6. 打包 Android 规范的 boot.img (包含全局防黑屏补丁)
+# 6. 打包 Android 规范的 boot.img (包含全局防黑屏补丁与 A 槽位硬编码)
 # ==========================================
 # 将 Image.gz 和设备树 (DTB) 拼接到一起
 cat arch/arm64/boot/Image.gz arch/arm64/boot/dts/qcom/sm8550-xiaomi-sheng.dtb > Image.gz-dtb_sheng
@@ -85,10 +85,10 @@ install -Dm644 Image.gz-dtb_sheng \
 
 mv Image.gz-dtb_sheng zImage_sheng
 
-# 🚨 核心神级修复：注入 rootwait 和 rw。
-# 无论你是启动 Arch、Ubuntu 还是 Fedora，都能防止闪存加载过慢导致的开机恐慌 (Kernel Panic)
-../mkbootimg --kernel zImage_sheng --cmdline "root=PARTLABEL=linux rootwait rw" --base 0x00000000 --kernel_offset 0x00008000 --tags_offset 0x01e00000 --pagesize 4096 --id -o ../boot_sheng_dualboot.img
-../mkbootimg --kernel zImage_sheng --cmdline "root=PARTLABEL=userdata rootwait rw" --base 0x00000000 --kernel_offset 0x00008000 --tags_offset 0x01e00000 --pagesize 4096 --id -o ../boot_sheng_singleboot.img
+# 🚨 核心神级修复：在此处成功向 --cmdline 追加 slot_suffix=_a androidboot.slot_suffix=a
+# 确保系统能够明确得知自己运行在 A 槽位，彻底为 qbootctl 铺平道路
+../mkbootimg --kernel zImage_sheng --cmdline "root=PARTLABEL=linux rootwait rw slot_suffix=_a androidboot.slot_suffix=a" --base 0x00000000 --kernel_offset 0x00008000 --tags_offset 0x01e00000 --pagesize 4096 --id -o ../boot_sheng_dualboot.img
+../mkbootimg --kernel zImage_sheng --cmdline "root=PARTLABEL=userdata rootwait rw slot_suffix=_a androidboot.slot_suffix=a" --base 0x00000000 --kernel_offset 0x00008000 --tags_offset 0x01e00000 --pagesize 4096 --id -o ../boot_sheng_singleboot.img
 
 # ==========================================
 # 7. 编译内核模块并清理冗余链接 (减小 deb 包体积)
