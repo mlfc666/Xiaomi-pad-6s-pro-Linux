@@ -161,9 +161,9 @@ EOF
 
             elif [ "$FLAVOUR" = "kde" ]; then
                 # 🚨 重点修改在这里：采纳了你的方案！
-                echo "🖥️ 安装 KDE Plasma 桌面环境 (使用官方 kde-standard 方案)..."
-                # 直接拉取 kde-standard (取代零碎包)，附加上你脚本里提取的网络和蓝牙插件
-                chroot rootdir bash -c "export DEBIAN_FRONTEND=noninteractive && apt-get install -y kde-standard sddm plasma-nm bluedevil firefox-esr"
+                echo "🖥️ 安装 KDE Plasma 桌面环境 (使用 kde-plasma-desktop 精简元包)..."
+                # kde-plasma-desktop 已自带 sddm / plasma-nm / dolphin / konsole
+                chroot rootdir bash -c "export DEBIAN_FRONTEND=noninteractive && apt-get install -y kde-plasma-desktop bluedevil firefox-esr"
                 chroot rootdir systemctl enable sddm
                 mkdir -p rootdir/etc/sddm.conf.d
                 cat > rootdir/etc/sddm.conf.d/autologin.conf <<EOF
