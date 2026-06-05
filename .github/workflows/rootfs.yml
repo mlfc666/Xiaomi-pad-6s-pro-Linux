@@ -29,6 +29,21 @@ on:
         description: '跳过创建GitHub Release'
         type: boolean
         default: false
+      default_user:
+        description: '账户名'
+        required: false
+        type: string
+        default: 'user'
+      default_user_password:
+        description: '账户密码'
+        required: false
+        type: string
+        default: ''
+      root_password:
+        description: 'root 密码'
+        required: false
+        type: string
+        default: ''
   push:
     branches:
       - main
@@ -93,8 +108,8 @@ jobs:
             ---
             
             ### 🔐 默认凭据
-            - 普通用户: `luser` / 密码: `luser`
-            - 管理员用户: `root` / 密码: `1234`
+            - 普通用户: `${{ github.event.inputs.default_user || 'user' }}`${{ github.event.inputs.default_user_password && format(' / 密码: `{0}`', github.event.inputs.default_user_password) || ' / 密码: 未设置' }}
+            - 管理员用户: `root`${{ github.event.inputs.root_password && format(' / 密码: `{0}`', github.event.inputs.root_password) || ' / 密码: 未设置' }}
             
             ---
             
@@ -138,11 +153,15 @@ jobs:
 
       - name: Build RootFS
         id: build
+        env:
+          DEFAULT_USER: ${{ github.event.inputs.default_user || 'user' }}
+          DEFAULT_USER_PASSWORD: ${{ github.event.inputs.default_user_password || '' }}
+          ROOT_PASSWORD: ${{ github.event.inputs.root_password || '' }}
         run: |
           chmod +x sheng-rootfs_build.sh
           # 把矩阵分配到的专属任务传给构建脚本
           sudo bash sheng-rootfs_build.sh debian-desktop "${{ github.event.inputs.kernel_version || '7.1' }}" "${{ matrix.boot }}" "${{ matrix.desktop }}"
-          
+
           PKG_COUNT=$(ls -1 *.7z 2>/dev/null | wc -l)
           echo "pkg_count=$PKG_COUNT" >> $GITHUB_OUTPUT
 

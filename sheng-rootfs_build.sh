@@ -18,7 +18,14 @@ fi
 DISTRO=$1
 KERNEL=$2
 TARGET_MODE=${3:-all}
-TARGET_FLAVOUR=${4:-all} 
+TARGET_FLAVOUR=${4:-all}
+
+# ==========================================
+# 🔐 账户与密码配置 (可由环境变量覆盖)
+# ==========================================
+DEFAULT_USER=${DEFAULT_USER:-user}
+DEFAULT_USER_PASSWORD=${DEFAULT_USER_PASSWORD:-}
+ROOT_PASSWORD=${ROOT_PASSWORD:-}
 
 distro_type=$(echo "$DISTRO" | cut -d'-' -f1)
 distro_variant=$(echo "$DISTRO" | cut -d'-' -f2)
@@ -126,16 +133,20 @@ EOF
         chroot rootdir bash -c "export DEBIAN_FRONTEND=noninteractive && apt-get install -y libglib2.0-0 libprotobuf-c1 libqmi-glib5 libmbim-glib4 initramfs-tools"
         chroot rootdir bash -c "export DEBIAN_FRONTEND=noninteractive && apt-get install -y /tmp/*.deb" || echo "⚠️ 部分 .deb 存在警告，继续执行。"
         
-        chroot rootdir bash -c "echo 'root:1234' | chpasswd"
+        if [ -n "$ROOT_PASSWORD" ]; then
+            chroot rootdir bash -c "echo 'root:${ROOT_PASSWORD}' | chpasswd"
+        fi
         echo "debian-$FLAVOUR-$MODE" > rootdir/etc/hostname
 
         # =========================
         # 🖥️ 桌面环境分发中心
         # =========================
         if [ "$distro_variant" = "desktop" ]; then
-            chroot rootdir useradd -m -s /bin/bash luser || true
-            chroot rootdir bash -c "echo 'luser:luser' | chpasswd"
-            chroot rootdir usermod -aG sudo,audio,video,input luser
+            chroot rootdir useradd -m -s /bin/bash "$DEFAULT_USER" || true
+            if [ -n "$DEFAULT_USER_PASSWORD" ]; then
+                chroot rootdir bash -c "echo '${DEFAULT_USER}:${DEFAULT_USER_PASSWORD}' | chpasswd"
+            fi
+            chroot rootdir usermod -aG sudo,audio,video,input "$DEFAULT_USER"
 
             if [ "$FLAVOUR" = "gnome" ]; then
                 echo "🖥️ 安装 GNOME 桌面环境..."
@@ -145,7 +156,7 @@ EOF
                 cat > rootdir/etc/gdm3/daemon.conf <<EOF
 [daemon]
 AutomaticLoginEnable=true
-AutomaticLogin=luser
+AutomaticLogin=${DEFAULT_USER}
 EOF
 
             elif [ "$FLAVOUR" = "kde" ]; then
@@ -157,7 +168,7 @@ EOF
                 mkdir -p rootdir/etc/sddm.conf.d
                 cat > rootdir/etc/sddm.conf.d/autologin.conf <<EOF
 [Autologin]
-User=luser
+User=${DEFAULT_USER}
 Session=plasma
 EOF
             fi
